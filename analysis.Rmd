@@ -1,0 +1,116 @@
+---
+title: "Engage Analysis"
+author: "Humbert Costas"
+date: "6/2/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(jsonlite, warn.conflicts = FALSE)
+```
+
+# MITRE ENGAGE STANDARD
+
+## Estado del arte
+
+Identifica la documentación oficial y la definición del esquema de datos, con el objetivo de responder a las siguientes preguntas en el analisis:  
+
+  1. ¿Cual es el proposito de ENGAGE? ¿Como podria ayudar desde el punto de vista de un RedTeam? ¿y BlueTeam?
+  2. ¿Se puede definir un modelo de datos? ¿Que clases y relaciones tendria?
+  3. ¿Como definirias el modelo de datos con data frames "elegantes"?
+  4. ¿Que relaciones identificas con otros estandares? 
+
+## Analisis del modelo de datos
+
+### RAW Data
+
+```{r cars, echo=FALSE}
+rootpath <- "data/engage"
+
+if (!dir.exists("data")) dir.create("data")
+if (!dir.exists(rootpath)) dir.create(rootpath)
+
+# Download and apply simple parser to raw data
+req <- httr::GET("https://api.github.com/repos/mitre/engage/git/trees/main?recursive=1")
+httr::stop_for_status(req)
+filelist <- unlist(lapply(httr::content(req)$tree, "[", "path"), use.names = F)
+filepath <- sapply(sapply(strsplit(grep("_data.*.json", filelist, value = T), "/"),
+                          function(x) x[2]),
+                   function(x)
+                     paste0("https://raw.githubusercontent.com/mitre/engage/main/_data/",x))
+filelist <- names(filepath)
+
+engage <- list()
+for (i in 1:length(filelist)) {
+  n <- filelist[i]
+  if (!file.exists(paste0(rootpath, "/", n))) {
+    download.file(url = filepath[i],
+                  destfile = paste0(rootpath, "/", n), quiet = TRUE)
+  }
+  engage[[n]] <- fromJSON(paste0(rootpath, "/", n))
+}
+
+rm(req, filelist, filepath, i, n, rootpath)
+```
+
+### Clean Data
+
+```{r clean_data, echo=FALSE}
+# Approaches
+approaches <- engage$approach_details.json
+
+# Goals
+goals <- engage$goal_details.json
+
+# Activities
+activities <- engage$activity_details.json
+
+
+relations <- engage$approach_activity_mappings.json
+names(relations) <- c("from", "to")
+
+```
+
+### Data frames elegantes
+
+```{r tidy_data, echo=FALSE}
+
+
+```
+
+### Approaches summary
+
+```{r tidy_data, echo=FALSE}
+
+
+```
+
+### Goals summary
+
+```{r tidy_data, echo=FALSE}
+
+
+```
+
+### Activities summary
+
+```{r tidy_data, echo=FALSE}
+
+
+```
+
+### Relationship summary
+
+```{r tidy_data, echo=FALSE}
+
+
+```
+
+### Conclusion
+
+```{r tidy_data, echo=FALSE}
+
+
+```

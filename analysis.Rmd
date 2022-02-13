@@ -9,6 +9,17 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(jsonlite, warn.conflicts = FALSE)
+library(tidyjson)
+library(tidyverse)
+library(ggplot2)
+library(igraph)
+library(ggraph)
+library(networkD3)
+library(viridis)
+library(kableExtra)
+library(patchwork)
+library(dplyr)
+library(lessR)
 ```
 
 # MITRE ENGAGE STANDARD
@@ -18,9 +29,20 @@ library(jsonlite, warn.conflicts = FALSE)
 Identifica la documentación oficial y la definición del esquema de datos, con el objetivo de responder a las siguientes preguntas en el analisis:  
 
   1. ¿Cual es el proposito de ENGAGE? ¿Como podria ayudar desde el punto de vista de un RedTeam? ¿y BlueTeam?
+  El propósito de Engage es planificar un serie de estrategias y metodologias para poder confrontar actividades de engaño, confrontación y negociación. Esto sirve para el RedTeam ya que estos pueden observar que medidas se toman ante los ataques y, poder anticiparse o    prepararse mejor ante estas defensas. Por otro lado, el Blue Team, tiene que asegurarse de utilizar correctamente estas medidas y, sobretodo mantenerse actualizado.
+  
   2. ¿Se puede definir un modelo de datos? ¿Que clases y relaciones tendria?
+  Se pueden definir diferentes modelos de datos dependiendo de tus necesidades. Aunque, en este caso, se centraría más en la defensa. 
+  Las clases principales serian approaches, goals y activities, y las relaciones vienen implicitas dentro de estas.
+  
   3. ¿Como definirias el modelo de datos con data frames "elegantes"?
+  El modelo de datos cogeria los datos más relevantes de estos.
+  Approaches: ID, name, type, goals, activities
+  Goals: ID, name, type, approaches
+  Activities: ID, name, type, goals, approaches
+  
   4. ¿Que relaciones identificas con otros estandares? 
+  Principalmente con el mitre Att%ck ya que trabajan juntos para poder preparar un mecanismo estratégico de defensa y ataque.
 
 ## Analisis del modelo de datos
 
@@ -77,40 +99,98 @@ names(relations) <- c("from", "to")
 
 ```{r tidy_data, echo=FALSE}
 
+#Approaches 
+
+approaches_el <- plyr::ldply(approaches,
+                                   function(x) data_frame(name=x["name"],
+                                                          type=x["type"], 
+                                                          goals=x["goals"],
+                                                          activities=x["activities"]))
+
+
+approaches_el %>% kable() %>% kable_styling
+  
+#Goals
+goals_el <- plyr::ldply(goals,
+                                   function(x) data_frame(name=x["name"],
+                                                          type=x["type"], 
+                                                          approaches=x["approaches"]))
+
+goals_el %>% kable() %>% kable_styling 
+
+#Activities
+activities_el <- plyr::ldply(activities,
+                                   function(x) data_frame(name=x["name"],
+                                                          type=x["type"], 
+                                                          goals=x["goals"],
+                                                          approaches=x["approaches"]))
+
+activities_el %>% kable() %>% kable_styling
+
+#Relations
+
+relations %>% kable() %>% kable_styling
 
 ```
 
 ### Approaches summary
 
-```{r tidy_data, echo=FALSE}
+```{r approaches, echo=FALSE}
+ap_type <- approaches_el %>%
+     group_by(type) %>% 
+     tally()
+pie(ap_type$n, labels = ap_type$type)
 
+
+app_goals <- approaches_el %>%
+     group_by(goals) %>% 
+     tally()
+pie(app_goals$n, labels = app_goals$goals)
 
 ```
 
 ### Goals summary
 
-```{r tidy_data, echo=FALSE}
+```{r goals, echo=FALSE}
 
+
+
+goals_type <- goals_el %>%
+     group_by(type) %>% 
+     tally()
+
+pie(goals_type$n, labels = goals_type$type)
+#plot(x = goals_type$type, y = goals_type$n, xlim = goals_type$type, ylim = goals_type$n)
 
 ```
 
 ### Activities summary
 
-```{r tidy_data, echo=FALSE}
-
+```{r activities, echo=FALSE}
+activities_el %>% kable() %>% kable_styling
 
 ```
 
 ### Relationship summary
 
-```{r tidy_data, echo=FALSE}
+```{r relationship, echo=FALSE}
+friends_mat <- as.matrix(relations)
 
+g <- graph.edgelist(friends_mat, directed = FALSE)
+plot(g, 
+     vertex.label.color = "black", 
+     edge.color = 'gray77',
+     vertex.size = 0,
+     edge.arrow.size = 0.1,
+     layout = layout_nicely(g))
 
 ```
 
 ### Conclusion
+Este estándar esta orientado a la defensa gracias a planificar actividades de confrontación, engaño y negociación del atacante; es una mejora del anterior estándar llamado SHIELD. La mejor forma de hacer un modelo de datos de este estándar es utilizar Approaches, Goals, Activities y Relations como clases y, dentro de estas clases las relaciones normalmente son N - N. 
 
-```{r tidy_data, echo=FALSE}
+Como resultados se ha podido profundizar más, sobretodo en activities ya que este fue demasiado complejo para su analisis. Sin embargo, el objetivo de la práctica fue ver como se juega con los datos y ver como funcionan estos. 
+```{r conclusion, echo=FALSE}
 
 
 ```
